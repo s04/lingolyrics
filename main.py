@@ -577,5 +577,5 @@ if __name__ == "__main__":
     if port >= 8010:
         raise RuntimeError("No available ports found between 8000 and 8009")
     
-    print(f"Starting server on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port) 
+    print(f"Starting server on http://127.0.0.1:{port}")
+    uvicorn.run(app, host="127.0.0.1", port=port) 
