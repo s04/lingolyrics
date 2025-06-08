@@ -1,0 +1,176 @@
+{% if song.original_languages and "Detection Failed" not in song.original_languages %}
+<div id="detected-languages-container" hx-swap-oob="true" class="text-sm text-gray-500 h-5 mb-2">
+    <strong>Detected Language(s):</strong> 
+    <span class="font-semibold text-purple-600">
+        {{ song.original_languages|join(', ') }}
+    </span>
+</div>
+{% endif %}
+
+<div id="lyrics-data" data-current-position="{{ song.current_position | default(0) }}" data-is-playing="{{ song.is_playing | tojson }}" style="display: none;"></div>
+
+<div class="space-y-4 text-center">
+    {% for line in song.lyrics %}
+    <div class="lyric-line" data-time="{{ line.time_seconds }}">
+        <p class="text-gray-500 text-sm">{{ line.timestamp }}</p>
+        <p class="original font-semibold text-lg">{{ line.original }}</p>
+        {% if line.phonetics %}
+        <p class="phonetics">{{ line.phonetics }}</p>
+        {% endif %}
+        {% for lang_code in selected_languages %}
+        <p class="translation-line">
+            <span class="translation-language-label">
+                <span>{{ selected_languages[lang_code].name }}</span>
+                <span class="translation-flag">{{ selected_languages[lang_code].flag }}</span>
+            </span>
+            <span class="translation-text">{{ line.translations.get(lang_code, "Translation not available") }}</span>
+        </p>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+let ws;
+let animationFrameId;
+
+// --- State Management ---
+// This object holds the song's state. We use a client-side timer for smoothness
+// and resynchronize it with server data to prevent drift.
+let songState = {
+    position: 0,
+    isPlaying: false,
+    lastServerPosition: 0, // The last position reported by the server
+    lastClientSyncTime: 0, // The client's performance.now() when we got the last server update
+};
+
+// --- UI Updaters ---
+
+function updateLyricHighlighting(position) {
+    const lines = document.querySelectorAll('.lyric-line');
+    let currentLine = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const time = parseFloat(line.dataset.time);
+        
+        if (time <= position) {
+            currentLine = line;
+        } else {
+            break;
+        }
+    }
+    
+    document.querySelectorAll('.lyric-line.active').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    if (currentLine) {
+        currentLine.classList.add('active');
+        const container = document.getElementById('lyrics-container');
+        const lineRect = currentLine.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        if (lineRect.top < containerRect.top || lineRect.bottom > containerRect.bottom) {
+            currentLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function updateSongInfo(position, isPlaying) {
+    const lyricsTimerEl = document.getElementById('lyrics-timer');
+    const lyricsStatusEl = document.getElementById('lyrics-status');
+
+    const minutes = Math.floor(position / 60);
+    const seconds = Math.floor(position % 60);
+    const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    if (lyricsTimerEl) lyricsTimerEl.textContent = timeString;
+
+    if (lyricsStatusEl) {
+        if (isPlaying) {
+            lyricsStatusEl.innerHTML = '<span class="text-green-600">Playing</span>';
+        } else {
+            lyricsStatusEl.innerHTML = '<span class="text-red-600">Paused</span>';
+        }
+    }
+}
+
+// --- Main Loop ---
+// Uses requestAnimationFrame for smooth, efficient UI updates.
+function animationLoop() {
+    if (songState.isPlaying) {
+        const elapsedTime = (performance.now() - songState.lastClientSyncTime) / 1000;
+        songState.position = songState.lastServerPosition + elapsedTime;
+        
+        updateSongInfo(songState.position, songState.isPlaying);
+        updateLyricHighlighting(songState.position);
+    }
+    animationFrameId = requestAnimationFrame(animationLoop);
+}
+
+// --- WebSocket Connection ---
+function connectWebSocket() {
+    ws = new WebSocket(`ws://${window.location.host}/ws`);
+    
+    ws.onopen = function() {
+        console.log('WebSocket connected');
+        setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send('ping');
+        }, 30000);
+    };
+
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        // Resynchronize the state with the server
+        songState.lastServerPosition = data.position;
+        songState.isPlaying = data.is_playing;
+        songState.lastClientSyncTime = performance.now();
+        
+        if (!songState.isPlaying) {
+             updateSongInfo(songState.lastServerPosition, songState.isPlaying);
+             updateLyricHighlighting(songState.lastServerPosition);
+        }
+    };
+
+    ws.onclose = function() {
+        console.log('WebSocket disconnected');
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+    };
+
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
+
+// --- Initialization ---
+function init() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (ws) ws.close();
+    
+    const lyricsDataEl = document.getElementById('lyrics-data');
+    songState.lastServerPosition = parseFloat(lyricsDataEl.dataset.currentPosition);
+    songState.position = songState.lastServerPosition;
+    songState.isPlaying = lyricsDataEl.dataset.isPlaying === 'true';
+    songState.lastClientSyncTime = performance.now();
+    
+    updateSongInfo(songState.position, songState.isPlaying);
+    updateLyricHighlighting(songState.position);
+
+    animationLoop();
+
+    connectWebSocket();
+}
+
+init();
+
+// Cleanup on page unload
+window.addEventListener('unload', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+    if(animationFrameId) cancelAnimationFrame(animationFrameId);
+});
+</script> 

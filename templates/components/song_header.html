@@ -1,0 +1,31 @@
+<div class="text-center pb-4 border-b">
+    <h2 class="text-2xl font-semibold">
+        {{ song.title }}
+        {% if song.translated_titles %}
+            <span class="text-xl text-gray-500 mx-2">→</span>
+            <span class="text-xl font-normal text-gray-600">
+                {{ song.translated_titles.values()|join(' / ') }}
+            </span>
+        {% endif %}
+    </h2>
+    <p class="text-gray-600 mb-2">by {{ song.artist }}</p>
+
+    <!-- This container will be populated by an OOB swap when lyrics (and languages) are loaded -->
+    <div id="detected-languages-container" class="text-sm text-gray-500 h-5 mb-2">
+    </div>
+
+    <div class="text-lg font-mono tabular-nums" id="lyrics-timer-container">
+        <span class="font-semibold">Time: </span><span id="lyrics-timer">
+            {{ '%02d:%02d'|format((song.current_position // 60)|int, (song.current_position % 60)|int) }}
+        </span>
+        <span class="mx-2">|</span>
+        <span class="font-semibold">Status: </span>
+        <span id="lyrics-status" class="font-semibold">
+            {% if song.is_playing %}
+                <span class="text-green-600">Playing</span>
+            {% else %}
+                <span class="text-red-600">Paused</span>
+            {% endif %}
+        </span>
+    </div>
+</div> 

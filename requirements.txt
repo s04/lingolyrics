@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+jinja2
+spotipy
+python-dotenv
+syncedlyrics
+google-genai
+python-multipart

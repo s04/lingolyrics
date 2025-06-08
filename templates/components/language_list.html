@@ -1,0 +1,15 @@
+<div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+    {% for code, lang_data in languages.items() %}
+        <label class="flex items-center space-x-2 text-sm p-2 rounded-lg transition-colors duration-150 cursor-pointer {% if code in user_languages %}bg-blue-100 font-semibold text-blue-800 border border-blue-200{% else %}bg-gray-50 hover:bg-gray-100 border border-gray-200{% endif %}">
+            <input type="checkbox" name="languages" value="{{ code }}" class="form-checkbox text-blue-600 h-4 w-4 rounded border-gray-300 focus:ring-blue-500" {% if code in user_languages %}checked{% endif %}
+                   hx-post="/preferences" 
+                   hx-target="#language-list-container" 
+                   hx-swap="innerHTML"
+                   hx-include="closest form">
+            <span>{{ lang_data.name }}</span>
+        </label>
+    {% endfor %}
+    {% if not languages %}
+        <p class="text-sm text-gray-500 col-span-full">No languages found.</p>
+    {% endif %}
+</div> 

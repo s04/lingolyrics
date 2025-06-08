@@ -1,0 +1,47 @@
+// Update the WebSocket connection code
+function connectWebSocket() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+    }
+    
+    ws = new WebSocket(`ws://${window.location.host}/ws`);
+    
+    ws.onopen = function() {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+    };
+
+    // Add ping/pong with timeout
+    let pingTimeout;
+    
+    function heartbeat() {
+        clearTimeout(pingTimeout);
+        pingTimeout = setTimeout(() => {
+            console.log('WebSocket connection timed out');
+            ws.close();
+        }, 35000);
+    }
+
+    ws.onopen = function() {
+        heartbeat();
+        setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+            }
+        }, 30000);
+    };
+
+    ws.onmessage = function(event) {
+        heartbeat();
+        // ... rest of onmessage handler
+    };
+
+    // ... rest of WebSocket handlers
+}
+
+// Cleanup properly
+window.addEventListener('beforeunload', () => {
+    if (ws) {
+        ws.close();
+    }
+}); 
