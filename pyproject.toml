@@ -1,0 +1,25 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = ["static/vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["main", "spotify_service", "translation_service", "lyrics_service", "cache_service", "model_catalog", "models", "demo"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.djlint]
+profile = "jinja"
+indent = 2
+max_line_length = 100
+# Decorative CSS dots are intentionally empty; app pages do not need SEO metadata.
+ignore = "H020,H030,H031"

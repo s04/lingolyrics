@@ -1,0 +1,174 @@
+<div class="workspace-top">
+  <span class="eyebrow">YOUR LISTENING ROOM</span>
+  <span class="badge">
+    <i>
+    </i>{{ 'DEMO' if song and song.demo else 'READY WHEN YOU ARE' if not song else 'LYRICS LOADED' }}</span>
+  </div>
+  {% if song %}
+    <div id="song-container" class="song-header">
+      <div class="mini-record" aria-hidden="true">♪</div>
+      <div>
+        <span class="eyebrow">{{ 'A LITTLE PREVIEW' if song.demo else 'NOW EXPLORING' }}</span>
+        <h2>{{ song.title }}</h2>
+        <p>{{ song.artist }}</p>
+        {% if song.translated_titles %}
+          <p class="translated-title">{{ song.translated_titles.values()|join(" / ") }}</p>
+        {% endif %}
+        <div class="song-meta">
+          <span>{{ song.lyrics_source }}</span>
+          <span>{{ 'Synced lyrics' if song.synced else 'Plain lyrics · no timing' }}</span>
+          {% if song.original_languages %}
+            <span>{{ song.original_languages|join(", ") }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="lyric-toolbar">
+      <div class="action-group">
+        <button class="button primary small"
+                type="button"
+                hx-post="/translate"
+                hx-target="#workspace"
+                hx-disabled-elt="this">
+          Translate <span aria-hidden="true">↗</span>
+        </button>
+        <button class="button quiet small"
+                type="button"
+                hx-post="/phonetics"
+                hx-target="#workspace"
+                hx-disabled-elt="this">Add IPA</button>
+        <button class="button quiet small"
+                type="button"
+                hx-post="/refresh-lyrics"
+                hx-target="#workspace"
+                hx-disabled-elt="this"
+                {% if song.demo %}disabled{% endif %}>Retry source</button>
+      </div>
+      <div class="action-group">
+        <button class="icon-button"
+                id="copy-lyrics"
+                type="button"
+                aria-label="Copy lyrics"
+                title="Copy lyrics">⧉</button>
+        <a class="icon-button"
+           href="{{ url_for('export_lyrics') }}"
+           download
+           aria-label="Download lyrics"
+           title="Download lyrics">↓</a>
+        <button class="icon-button"
+                id="focus-mode"
+                type="button"
+                aria-label="Toggle focus mode"
+                aria-pressed="false"
+                title="Focus mode">⛶</button>
+      </div>
+    </div>
+    <div class="reading-options">
+      <label>
+        <input type="checkbox" id="show-translations" checked>
+        Translations
+      </label>
+      <label>
+        <input type="checkbox" id="show-phonetics" checked>
+        Pronunciation
+      </label>
+      <label>
+        <input type="checkbox" id="follow-lyrics" checked>
+        Follow along
+      </label>
+      {% if song.demo %}
+        <button class="text-button" id="demo-play" type="button">▶ Play demo timer</button>
+      {% endif %}
+    </div>
+    <div id="playback-status" class="playback-status" role="status">{{ 'Demo timing only · no audio' if song.demo else 'Read at your own pace' if not song.spotify_id else 'Connecting to Spotify playback…' }}</div>
+    <div id="lyrics-container"
+         class="lyrics-scroll"
+         tabindex="0"
+         role="region"
+         aria-label="Song lyrics"
+         data-track-id="{{ song.spotify_id }}"
+         data-demo="{{ 'true' if song.demo else 'false' }}"
+         data-synced="{{ 'true' if song.synced else 'false' }}"
+         data-position="{{ song.current_position }}"
+         data-playing="{{ 'true' if song.is_playing else 'false' }}">
+      {% for line in song.lyrics %}
+        <div class="lyric-line" data-time="{{ line.time_seconds }}">
+          <span class="line-number">{{ '%02d'|format(loop.index) }}</span>
+          <div class="line-content">
+            <p class="original" dir="auto">{{ line.original or '♪' }}</p>
+            {% if line.phonetics %}
+              <p class="phonetics" dir="auto">{{ line.phonetics }}</p>
+            {% endif %}
+            {% for code, language in selected_languages.items() %}
+              <p class="translation-line" dir="auto">
+                <span class="translation-label">{{ code|upper }}</span>{{ line.translations.get(code, '') }}
+              </p>
+            {% endfor %}
+          </div>
+          {% if song.synced %}
+            <span class="line-time">{{ '%02d:%02d'|format((line.time_seconds // 60)|int, (line.time_seconds % 60)|int) }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    {% if stats %}
+      <div class="translation-stats">
+        {% for stat in stats %}
+          <span>{{ stat.language_name }} · {{ 'from cache' if stat.from_cache else '%.1fs'|format(stat.duration_seconds) }} · {{ stat.translated_word_count }} words</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="welcome">
+      <div class="record-scene" aria-hidden="true">
+        <span class="orbit orbit-one"></span>
+        <span class="orbit orbit-two"></span>
+        <span class="floating-word word-one">bonjour</span>
+        <span class="floating-word word-two">hola</span>
+        <span class="floating-word word-three">こんにちは</span>
+        <div class="record">
+          <div class="record-label">
+            <span>lingo
+              <br>
+            lyrics.</span>
+            <i>
+            </i>
+          </div>
+        </div>
+        <span class="spark spark-one">✧</span>
+        <span class="spark spark-two">✦</span>
+      </div>
+      <span class="eyebrow">GOOD MUSIC. NEW MEANING.</span>
+      <h2>
+        There’s more to
+        <br>
+        your favorite song.
+      </h2>
+      <p>
+        Bring in a song and discover the words behind the melody.
+        <br>
+        Read, translate, and find your way into another language.
+      </p>
+      <button type="button"
+              class="button primary"
+              hx-post="/demo"
+              hx-target="#workspace">
+        Take it for a spin <span aria-hidden="true">→</span>
+      </button>
+      <span class="no-account">No account needed for the demo</span>
+    </div>
+    <div class="welcome-steps">
+      <div>
+        <span>01 / LISTEN</span>
+        <p>Pick a song you love.</p>
+      </div>
+      <div>
+        <span>02 / UNDERSTAND</span>
+        <p>Meet it in a new language.</p>
+      </div>
+      <div>
+        <span>03 / MAKE IT STICK</span>
+        <p>Follow the words. Sing along.</p>
+      </div>
+    </div>
+  {% endif %}

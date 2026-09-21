@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+
 
 class TranslationStats(BaseModel):
     language_name: str
@@ -8,12 +8,14 @@ class TranslationStats(BaseModel):
     translated_token_count: int
     from_cache: bool = False
 
+
 class LyricLine(BaseModel):
     timestamp: str  # The LRC timestamp like [00:16.45]
     time_seconds: float  # Timestamp converted to seconds
     original: str
-    phonetics: Optional[str] = None
-    translations: Dict[str, str] = {}  # Language code -> translated text
+    phonetics: str | None = None
+    translations: dict[str, str] = Field(default_factory=dict)  # Language code -> translated text
+
 
 class Song(BaseModel):
     title: str
@@ -21,6 +23,12 @@ class Song(BaseModel):
     spotify_id: str
     current_position: float = 0  # Current playback position in seconds
     is_playing: bool = False
-    lyrics: List[LyricLine] = []
-    original_languages: List[str] = []
-    translated_titles: Dict[str, str] = {} 
+    lyrics: list[LyricLine] = Field(default_factory=list)
+    original_languages: list[str] = Field(default_factory=list)
+    translated_titles: dict[str, str] = Field(default_factory=dict)
+    synced: bool = True
+    lyrics_source: str = ""
+    demo: bool = False
+    album: str = ""
+    duration: float | None = None
+    primary_artist: str = ""

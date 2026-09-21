@@ -9,3 +9,14 @@ __pycache__
 *.pywz
 .cache
 data/cache/
+.DS_Store
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+data/preferences.json
+data/preferences.tmp
+node_modules/
+playwright-report/
+test-results/
+.playwright-mcp/

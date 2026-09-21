@@ -1,42 +1,38 @@
-import os
+"""Collision-resistant, atomic local JSON cache. Corrupt entries are misses."""
+
+import hashlib
 import json
-import re
-from typing import Optional, Any
+import os
+import tempfile
+from pathlib import Path
 
-CACHE_DIR = "data/cache"
-if not os.path.exists(CACHE_DIR):
-    os.makedirs(CACHE_DIR)
+CACHE_DIR = Path(__file__).resolve().parent / "data" / "cache"
 
-def _sanitize_filename(name: str) -> str:
-    """Sanitizes a string to be a valid filename."""
-    name = name.lower()
-    name = re.sub(r'[^\w\s-]', '', name)
-    name = re.sub(r'[-\s]+', '-', name).strip('-_')
-    return name
 
-def _get_cache_filepath(key: str) -> str:
-    """Generates a filepath for a given cache key."""
-    sanitized_key = _sanitize_filename(key)
-    return os.path.join(CACHE_DIR, f"{sanitized_key}.json")
+def _get_cache_filepath(key: str) -> Path:
+    return Path(CACHE_DIR) / (hashlib.sha256(key.encode()).hexdigest() + ".json")
 
-def get_from_cache(key: str) -> Optional[Any]:
-    """Retrieves data from a cache file."""
-    filepath = _get_cache_filepath(key)
-    if not os.path.exists(filepath):
-        return None
+
+def get_from_cache(key):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (IOError, json.JSONDecodeError) as e:
-        print(f"Cache read error for key '{key}': {e}")
+        return json.loads(_get_cache_filepath(key).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return None
 
-def save_to_cache(key: str, data: Any):
-    """Saves data to a cache file."""
-    filepath = _get_cache_filepath(key)
+
+def save_to_cache(key, data):
+    temporary = None
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
-            print(f"Saved to cache: {filepath}")
-    except IOError as e:
-        print(f"Error saving to cache for key '{key}': {e}") 
+        Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=CACHE_DIR, delete=False
+        ) as handle:
+            temporary = handle.name
+            json.dump(data, handle, ensure_ascii=False)
+        os.replace(temporary, _get_cache_filepath(key))
+    except OSError:
+        # Cache failures must not prevent a successful translation from displaying.
+        pass
+    finally:
+        if temporary:
+            Path(temporary).unlink(missing_ok=True)

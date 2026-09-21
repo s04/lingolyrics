@@ -1,0 +1,17 @@
+{
+  "name": "lingolyrics-checks",
+  "private": true,
+  "scripts": {
+    "lint": "eslint static/app.js tests/browser playwright.config.js && prettier --check static/app.js static/style.css eslint.config.js playwright.config.js tests/browser",
+    "format": "prettier --write static/app.js static/style.css eslint.config.js playwright.config.js tests/browser",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.8"
+  }
+}

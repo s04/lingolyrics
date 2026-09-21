@@ -1,164 +1,205 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>LingoLyrics - Learn Languages Through Music</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <div class="text-center mb-8">
-            <h1 class="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 pb-2">
-                LingoLyrics
-            </h1>
-            <p class="text-xl text-gray-500">Learn Languages Through Music 🎵</p>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Controls & Info -->
-            <div class="lg:col-span-1 space-y-8">
-                <!-- Controls Card -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Controls</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2 text-gray-700">1. Fetch Data</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button hx-get="/current-song" hx-target="#song-container"
-                                        class="button-with-loader bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 ease-in-out text-center font-semibold">
-                                    <span class="button-text">Get Song</span>
-                                    <span class="button-loader"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div></span>
-                                </button>
-                                <button hx-get="/lyrics-loader" hx-target="#lyrics-content" hx-swap="innerHTML"
-                                        class="button-with-loader bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 ease-in-out text-center font-semibold">
-                                    <span class="button-text">Get Lyrics Only</span>
-                                    <span class="button-loader"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div></span>
-                                </button>
-                                <button hx-get="/get-song-and-lyrics" hx-target="#lyrics-content" hx-swap="innerHTML"
-                                        class="button-with-loader col-span-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-all duration-200 ease-in-out text-center font-semibold">
-                                    <span class="button-text">Get Song & Lyrics</span>
-                                    <span class="button-loader"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div></span>
-                                </button>
-                                <button hx-get="/get-song-lyrics-phonetics" hx-target="#lyrics-content" hx-swap="innerHTML"
-                                        class="button-with-loader col-span-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition-all duration-200 ease-in-out text-center font-semibold">
-                                    <span class="button-text">Song, Lyrics & Phonetics</span>
-                                    <span class="button-loader"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div></span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-semibold my-3 text-gray-700">2. Translation Profile</h3>
-                            <form hx-post="/preferences/profile" hx-trigger="change" hx-swap="none" class="mb-4">
-                                <select name="profile" class="w-full px-3 py-2 border rounded-md bg-white">
-                                    {% for key, profile in translation_profiles.items() %}
-                                    <option value="{{ key }}" {% if key == user_profile %}selected{% endif %}>
-                                        {{ profile.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </form>
-                        </div>
-
-                        <form hx-post="/translate" hx-target="#lyrics-content" hx-swap="innerHTML" hx-indicator="#translate-loading-overlay">
-                            <h3 class="text-lg font-semibold my-3 text-gray-700">3. Translate</h3>
-                            
-                            <div id="language-search-container" class="mb-4">
-                                <input type="search" id="language-search" placeholder="Search languages..." class="w-full px-3 py-2 border rounded-md"
-                                       onkeyup="filterLanguages()">
-                            </div>
-
-                            <div id="language-list-container" class="max-h-60 overflow-y-auto border rounded-md p-2 mb-4">
-                                {% include 'components/language_list.html' %}
-                            </div>
-
-                            <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                                Translate Lyrics
-                            </button>
-                        </form>
-
-                    </div>
-                </div>
-
-                <!-- Stats Card -->
-                <div id="stats-container">
-                    {% include 'components/stats_card.html' %}
-                </div>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>LingoLyrics · Listen a little closer</title>
+    <link rel="icon"
+          href="{{ url_for('static', path='favicon.svg') }}"
+          type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
+    <script src="{{ url_for('static', path='app.js') }}" defer></script>
+  </head>
+  <body hx-indicator="#busy"
+        hx-disabled-elt="button[hx-get], button[hx-post], button[type=submit]">
+    <a class="skip-link" href="#workspace">Skip to lyrics</a>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="LingoLyrics home">
+          <span class="brand-mark">ll<span>♪</span>
+          </span>lingolyrics<span class="brand-dot">.</span>
+        </a>
+        <div class="topbar-right">
+          <span class="local-label">
+            <i>
+            </i>Your listening space</span>
+            <a class="button quiet"
+               href="{{ url_for('spotify_login') }}">Connect Spotify <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </header>
+        <main>
+          <section class="intro">
+            <div>
+              <span class="eyebrow">MUSIC IS A LANGUAGE. LEARN ANOTHER.</span>
+              <h1>
+                Listen a little <em>closer.</em>
+              </h1>
+              <p>Your favorite songs. A new way to understand them.</p>
             </div>
-            
-            <!-- Right Column: Lyrics -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-8 relative">
-                    <div id="song-container">
-                        <!-- Initial State: Welcome -->
-                        <div class="text-center py-8">
-                            <img src="/data/logo.png" alt="LingoLyrics Logo" class="mx-auto mb-6" style="max-height: 120px;">
-                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to LingoLyrics!</h2>
-                            <p class="text-gray-600 px-4">Toolkit for listening to foreign music.</p>
-                        </div>
-                    </div>
-                    
-                    <div id="lyrics-container" class="max-h-[80vh] overflow-y-auto mt-4">
-                        <h2 id="lyrics-header" class="text-2xl font-semibold mb-4 text-center border-b pb-2">How It Works</h2>
-                        <div id="lyrics-content">
-                            <!-- Initial State: Instructions -->
-                            <div class="space-y-5 text-gray-700 p-4 rounded-lg bg-gray-50 border">
-                                <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">1</div>
-                                    <p class="pt-1">
-                                        <strong>Play a Song on Spotify:</strong> Fire up Spotify and play any track.
-                                    </p>
-                                </div>
-                                <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">2</div>
-                                    <p class="pt-1">
-                                        <strong>Fetch Data:</strong> Use the controls on the left. We recommend starting with the <strong class="text-blue-600">Get Song & Lyrics</strong> button.
-                                    </p>
-                                </div>
-                                 <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">3</div>
-                                    <p class="pt-1">
-                                        <strong>Translate:</strong> Pick your target languages and hit <strong class="text-blue-600">Translate Lyrics</strong> to see line-by-line translations.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="translate-loading-overlay" class="htmx-indicator absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
-                        <div class="text-center">
-                            <div class="animate-spin inline-block rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                            <p class="text-lg font-semibold text-gray-700 mt-4">Translating...</p>
-                        </div>
-                    </div>
+            <span class="intro-note" aria-hidden="true">A little rhythm.
+              <br>
+              A little discovery. <span>↘</span>
+            </span>
+          </section>
+          <div class="layout">
+            <aside class="sidebar" aria-label="Song and translation settings">
+              <section class="panel source-panel">
+                <div class="section-heading">
+                  <span class="step">01</span>
+                  <h2>Find your song</h2>
+                  <span aria-hidden="true">♫</span>
                 </div>
+                <button class="button primary full"
+                        type="button"
+                        hx-get="/get-song-and-lyrics"
+                        hx-target="#workspace"
+                        hx-disabled-elt="this">↻ &nbsp; Load from Spotify</button>
+                <p class="helper">Play a track on Spotify, then bring it here.</p>
+                <div class="divider">
+                  <span>or find a song</span>
+                </div>
+                <form hx-post="/search" hx-target="#workspace">
+                  <label for="song-title">Song title</label>
+                  <input id="song-title"
+                         name="title"
+                         placeholder="e.g. Imagine"
+                         required
+                         maxlength="200">
+                  <label for="song-artist">Artist</label>
+                  <input id="song-artist"
+                         name="artist"
+                         placeholder="e.g. John Lennon"
+                         required
+                         maxlength="200">
+                  <button class="button secondary full" type="submit">
+                    Find lyrics <span aria-hidden="true">→</span>
+                  </button>
+                </form>
+                <button class="text-button demo-button"
+                        type="button"
+                        hx-post="/demo"
+                        hx-target="#workspace">
+                  Just exploring? Try the demo <span aria-hidden="true">↗</span>
+                </button>
+              </section>
+              <section class="panel">
+                <div class="section-heading">
+                  <span class="step">02</span>
+                  <h2>Make it yours</h2>
+                  <span aria-hidden="true">✳</span>
+                </div>
+                <form id="settings-form"
+                      hx-post="/preferences"
+                      hx-target="#settings-status">
+                  <label for="profile">Translation model</label>
+                  <select id="profile" name="profile">
+                    {% for key, item in translation_profiles.items() %}
+                      <option value="{{ key }}"
+                              {% if key == prefs.translation_profile %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <div id="custom-model-field"
+                       {% if prefs.translation_profile != 'openrouter/custom' %}hidden{% endif %}>
+                    <label for="custom-model">OpenRouter model ID</label>
+                    <input id="custom-model"
+                           name="custom_model"
+                           value="{{ prefs.custom_model }}"
+                           placeholder="provider/model"
+                           maxlength="160"
+                           list="openrouter-models">
+                    <datalist id="openrouter-models">
+                    </datalist>
+                    <button class="text-button"
+                            type="button"
+                            id="load-models">Browse available models</button>
+                    <p id="model-status"
+                       class="helper"
+                       role="status">Choose a text model with structured-output support.</p>
+                  </div>
+                  <label for="language-search">
+                    Translate into <span class="label-note">up to 5</span>
+                  </label>
+                  <input id="language-search"
+                         type="search"
+                         placeholder="Search languages…"
+                         autocomplete="off">
+                  <div id="language-list" class="language-list">
+                    {% for code, language in languages.items() %}
+                      <label class="language-option" data-language="{{ language.name|lower }}">
+                        <input type="checkbox"
+                               name="languages"
+                               value="{{ code }}"
+                               {% if code in prefs.languages %}checked{% endif %}>
+                        <span>{{ language.name }}</span>
+                        <span class="language-code">{{ code }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                  <p id="language-empty" class="helper" hidden>No matching languages.</p>
+                  <label for="lyrics-provider">Lyrics source</label>
+                  <select id="lyrics-provider" name="lyrics_provider">
+                    {% for key, name in providers.items() %}
+                      <option value="{{ key }}"
+                              {% if key == prefs.lyrics_provider %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="button secondary full">Save settings</button>
+                  <p id="settings-status"
+                     class="helper"
+                     role="status">Settings stay on this device.</p>
+                </form>
+              </section>
+              <details class="panel setup-panel">
+                <summary>
+                  Connections & setup <span aria-hidden="true">＋</span>
+                </summary>
+                <ul class="connection-list">
+                  <li>
+                    Spotify <span>{{ 'Configured' if spotify_configured else 'Not configured' }}</span>
+                  </li>
+                  <li>
+                    Gemini <span>{{ 'Key added' if gemini_configured else 'Key needed' }}</span>
+                  </li>
+                  <li>
+                    OpenRouter <span>{{ 'Key added' if openrouter_configured else 'Key needed' }}</span>
+                  </li>
+                </ul>
+                <p class="helper">Add credentials to your local <code>.env</code> file, then restart. Search and demo work without keys. Configured does not guarantee an active connection.</p>
+                <p class="helper">AI requests use your selected provider and may incur charges. Preview and free model availability varies.</p>
+                <a href="https://github.com/s04/lingolyrics#setup"
+                   target="_blank"
+                   rel="noreferrer">Setup guide ↗</a>
+              </details>
+            </aside>
+            <div class="listening-column">
+              <div id="notice" role="status" aria-live="polite"></div>
+              <div id="busy" class="htmx-indicator" role="status">
+                Working on your song<span class="loading-dots">…</span>
+              </div>
+              <section id="workspace"
+                       class="panel workspace"
+                       aria-label="Lyrics workspace"
+                       tabindex="-1">
+                {% include "components/workspace.html" %}
+              </section>
+              <div class="footnote">
+                <span aria-hidden="true">✧</span>
+                <p>A line at a time. A language at your own pace.</p>
+                <span class="footnote-rule"></span>
+                <span>LISTEN · READ · REPEAT</span>
+              </div>
             </div>
-        </div>
-        
-        <!-- Loading indicators can be centralized or hidden -->
-        <div>
-        </div>
-    </div>
-    <script>
-        function filterLanguages() {
-            let input = document.getElementById('language-search');
-            let filter = input.value.toUpperCase();
-            let container = document.getElementById('language-list-container');
-            let labels = container.getElementsByTagName('label');
-
-            for (let i = 0; i < labels.length; i++) {
-                let span = labels[i].getElementsByTagName('span')[0];
-                if (span) {
-                    let txtValue = span.textContent || span.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        labels[i].style.display = "";
-                    } else {
-                        labels[i].style.display = "none";
-                    }
-                }
-            }
-        }
-    </script>
-</body>
-</html> 
+          </div>
+        </main>
+        <footer>
+          <span>Made for curious ears.</span>
+          <a href="https://github.com/s04/lingolyrics"
+             target="_blank"
+             rel="noreferrer">Open source, always ↗</a>
+        </footer>
+      </div>
+    </body>
+  </html>
