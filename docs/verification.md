@@ -2,13 +2,13 @@
 
 ## Automated checks
 
-- **87 Python tests passed**, **93% statement coverage** across application modules (Python 3.12).
+- **87 Python tests passed**, **92% statement coverage** across application modules including the new source adapters (Python 3.12).
 - **6 Playwright tests passed** across desktop Chromium and mobile Chromium emulation: repeated HTMX swaps, demo timer, translation/IPA visibility, focus mode, clipboard, downloads, language search, settings persistence, error preservation, and accessibility.
 - Axe reported **no serious or critical violations** for the tested welcome and demo views. This is an automated check, not a complete manual accessibility audit.
 - Ruff lint/format, djLint template lint/format, ESLint, Prettier, and `git diff --check` passed.
 - `npm audit`: no known vulnerabilities. `pip-audit --disable-pip --no-deps -r requirements.txt`: no known vulnerabilities in the resolved runtime dependency set.
 - Python tests emit two upstream deprecation warnings from Starlette's current test client integration with HTTPX/AnyIO; they do not indicate test failures.
-- GitHub Actions is configured for Python 3.12 and 3.13. Remote CI and Windows execution have not been observed in this session.
+- GitHub Actions is configured for Python 3.12 and 3.13. [Remote CI](https://github.com/s04/lingolyrics/actions/runs/35661882404) passed on both versions, including browser tests. Windows execution has not been observed in this session.
 
 ## Live integrations
 

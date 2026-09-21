@@ -12,7 +12,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
 ignore = ["E501"]
 
 [tool.coverage.run]
-source = ["main", "spotify_service", "translation_service", "lyrics_service", "cache_service", "model_catalog", "models", "demo"]
+source = ["main", "spotify_service", "translation_service", "lyrics_service", "cache_service", "model_catalog", "models", "demo", "lyrics_sources"]
 
 [tool.coverage.report]
 show_missing = true
